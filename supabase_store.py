@@ -111,13 +111,21 @@ class SupabaseStore:
 
     def update_user_status(self, user_id: str, new_status: str):
         if not self.client: return
-        # Try to match by user_id UUID or user_code (if frontend sends code)
-        # Assuming user_id is the UUID from DB now.
-        self.client.table("users").update({"account_status": new_status}).eq("user_id", user_id).execute()
+        
+        # Check if UUID or User Code
+        if user_id and len(user_id) == 36:
+            self.client.table("users").update({"account_status": new_status}).eq("user_id", user_id).execute()
+        else:
+            self.client.table("users").update({"account_status": new_status}).eq("user_code", user_id).execute()
 
     def update_last_login(self, user_id: str):
         if not self.client: return
-        self.client.table("users").update({"last_login": datetime.now().isoformat()}).eq("user_id", user_id).execute()
+        
+        # Check if UUID or User Code
+        if user_id and len(user_id) == 36:
+            self.client.table("users").update({"last_login": datetime.now().isoformat()}).eq("user_id", user_id).execute()
+        else:
+            self.client.table("users").update({"last_login": datetime.now().isoformat()}).eq("user_code", user_id).execute()
 
     def log_activity(self, user_id: str, action: str, details: str):
         """Logs an action to activity_log. Handles USR codes by looking up UUID."""
@@ -202,9 +210,19 @@ class SupabaseStore:
 
     def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
         if not self.client: return None
-        res = self.client.table("users").select("*").eq("user_id", user_id).execute()
-        if res.data:
-            return self._to_frontend_format(res.data[0])
+        
+        try:
+             # Try fetching by UUID
+             if user_id and len(user_id) == 36:
+                 res = self.client.table("users").select("*").eq("user_id", user_id).execute()
+             else:
+                 res = self.client.table("users").select("*").eq("user_code", user_id).execute()
+                 
+             if res.data:
+                return self._to_frontend_format(res.data[0])
+        except Exception as e:
+            print(f"Error fetching user {user_id}: {e}")
+            
         return None
 
     def update_user(self, user_id: str, updates: Dict[str, Any]):
@@ -218,12 +236,23 @@ class SupabaseStore:
         if "Account_Status" in updates: db_updates["account_status"] = updates["Account_Status"]
         if "Password_Hash" in updates: db_updates["password_hash"] = updates["Password_Hash"]
         
-        self.client.table("users").update(db_updates).eq("user_id", user_id).execute()
+        if user_id and len(user_id) == 36:
+            self.client.table("users").update(db_updates).eq("user_id", user_id).execute()
+        else:
+            self.client.table("users").update(db_updates).eq("user_code", user_id).execute()
 
     def delete_user(self, user_id: str):
         if not self.client: return
-        self.client.table("users").delete().eq("user_id", user_id).execute()
+        
+        if user_id and len(user_id) == 36:
+            self.client.table("users").delete().eq("user_id", user_id).execute()
+        else:
+            self.client.table("users").delete().eq("user_code", user_id).execute()
 
     def update_user_password(self, user_id: str, new_password_hash: str):
         if not self.client: return
-        self.client.table("users").update({"password_hash": new_password_hash}).eq("user_id", user_id).execute()
+        
+        if user_id and len(user_id) == 36:
+            self.client.table("users").update({"password_hash": new_password_hash}).eq("user_id", user_id).execute()
+        else:
+            self.client.table("users").update({"password_hash": new_password_hash}).eq("user_code", user_id).execute()

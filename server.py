@@ -336,6 +336,23 @@ async def unlock_account(username: str, admin_user: dict = Depends(get_current_u
     else:
         return {"status": "success", "message": f"Account {username} was not locked"}
 
+@app.post("/auth/confirm-admin")
+async def confirm_admin_credentials(creds: LoginRequest):
+    """Verify admin credentials for sensitive actions (like Reset Data)"""
+    try:
+        user = auth_manager.authenticate(creds.username, creds.password)
+        if not user:
+             raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        if user.get("Role") != "Admin":
+            raise HTTPException(status_code=403, detail="Admin permissions required")
+            
+        return {"status": "success", "message": "Admin verified"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # --- Inventory Endpoints ---
 
 
