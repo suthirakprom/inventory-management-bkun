@@ -38,18 +38,30 @@
     <script src="session.js"></script>
     <style>
         :root {
+            /* Light Mode (Default) */
             --bg-light: #f8fafc;
             --bg-card: #ffffff;
             --text-primary: #1e293b;
             --text-secondary: #64748b;
             --accent-primary: #3b82f6;
-            /* Blue 500 */
             --accent-secondary: #8b5cf6;
-            /* Violet 500 */
             --danger: #ef4444;
             --warning: #f59e0b;
             --success: #10b981;
             --border-color: #e2e8f0;
+        }
+
+        /* Dark Mode Variables */
+        [data-theme="dark"] {
+            --bg-light: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #60a5fa;
+            /* Lighter blue for dark mode */
+            --accent-secondary: #a78bfa;
+            /* Lighter violet */
+            --border-color: #334155;
         }
 
         body {
@@ -90,6 +102,35 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+            position: relative;
+            /* For positioning toggle */
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1.25rem;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: transform 0.2s;
+            position: absolute;
+            right: 0.75rem;
+            top: 0.75rem;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
         }
 
         .nav-item {
@@ -212,7 +253,8 @@
             padding: 1rem;
             color: var(--text-secondary);
             border-bottom: 2px solid var(--border-color);
-            background-color: #f1f5f9;
+            background-color: rgba(0, 0, 0, 0.02);
+            /* Transparent bg for dark mode compat */
         }
 
         td {
@@ -244,7 +286,8 @@
 
         /* Agent Chat / Response Area */
         .agent-response {
-            background-color: #f1f5f9;
+            background-color: var(--bg-light);
+            /* Use var for theme support */
             border-left: 4px solid var(--accent-primary);
             padding: 1rem;
             margin-top: 1rem;
@@ -399,6 +442,22 @@
             margin-bottom: 1.5rem;
         }
 
+        /* Dashboard Header */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .date-display {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
         /* Mobile Menu Toggle */
         #menu-toggle {
             display: none;
@@ -406,13 +465,18 @@
             top: 1rem;
             left: 1rem;
             z-index: 1001;
-            background: var(--bg-card);
-            border: 1px solid #334155;
+            background: var(--accent-primary);
+            border: none;
             color: white;
-            padding: 0.75rem;
+            padding: 0.75rem 1rem;
             border-radius: 0.5rem;
             cursor: pointer;
-            font-size: 1.5rem;
+            font-size: 1.25rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        #menu-toggle:hover {
+            background: var(--accent-secondary);
         }
 
         /* Responsive Design */
@@ -492,6 +556,23 @@
             .grid-4 {
                 grid-template-columns: 1fr;
                 gap: 1rem;
+            }
+
+            /* Mobile Dashboard Header */
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+                margin-bottom: 1rem;
+            }
+
+            .dashboard-header h1 {
+                font-size: 1.5rem;
+                margin: 0;
+            }
+
+            .date-display {
+                font-size: 0.85rem;
             }
 
             /* Responsive Table Container */
@@ -662,10 +743,17 @@
         </div>
 
         <!-- User Info Header -->
-        <div style="padding: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #334155;">
-            <div style="font-size: 0.875rem; color: var(--text-secondary);">Logged in as:</div>
-            <div style="font-weight: 600; margin-top: 0.25rem;" id="current-username">Loading...</div>
-            <span id="current-user-role-badge" class="role-badge"></span>
+        <div class="user-info">
+            <div id="sidebar-initials" class="avatar">U</div>
+            <div class="info">
+                <div class="subtitle">Logged in as:</div>
+                <div id="sidebar-username" class="username">Guest</div>
+                <div id="sidebar-role" class="role-badge">User</div>
+            </div>
+            <!-- Theme Toggle -->
+            <button onclick="toggleTheme()" class="theme-toggle" title="Toggle Dark/Light Mode">
+                🌓
+            </button>
         </div>
 
         <div class="nav-item active" onclick="showSectionMobile('dashboard')">📊 Dashboard</div>
@@ -691,9 +779,9 @@
 
         <!-- DASHBOARD -->
         <div id="dashboard" class="section">
-            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <header class="dashboard-header">
                 <h1>Dashboard</h1>
-                <div style="color: var(--text-secondary);">Today: <span id="current-date"></span></div>
+                <div class="date-display">Today: <span id="current-date"></span></div>
             </header>
 
             <div class="grid-4">
@@ -1082,9 +1170,21 @@
             // Initialize session management (inactivity timer, etc.)
             initSessionManagement();
 
+            // Load Theme Preference
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
             // Load app data
             fetchData();
             fetchCurrentUser();
+        }
+
+        // --- THEME TOGGLE ---
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
         }
 
         // Helper function to get fetch options with auth headers
