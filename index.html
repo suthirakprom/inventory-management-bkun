@@ -365,12 +365,16 @@
             background: transparent;
             border: 1px solid var(--border-color);
             color: var(--text-secondary);
-            padding: 0.5rem;
+            padding: 0.35rem 0.75rem;
             border-radius: 0.375rem;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 0.875rem;
-            margin: 0 0.25rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin: 0 0.2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .action-btn:hover {
@@ -1286,7 +1290,8 @@
         function showSection(id) {
             // Check if trying to access admin-only pages without admin role
             if (id === 'user-management' || id === 'settings') {
-                if (!currentUser || currentUser.Role !== 'Admin') {
+                const role = currentUser ? (currentUser.Role || currentUser.role || '') : '';
+                if (role.toLowerCase() !== 'admin') {
                     // Redirect to dashboard and show error message
                     id = 'dashboard';  // Change id to dashboard
                     const insightBox = document.getElementById('ai-insight-box');
@@ -1313,10 +1318,15 @@
             }
 
             document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
+            const target = document.getElementById(id);
+            if (target) target.classList.remove('hidden');
 
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
+            // Highlight nav item by finding the one that calls this function with formatting
+            // Or use the map if reliable, but mapped by index can be fragile if HTML changes.
+            // Better to match by onclick attribute or ID if possible.
+            // For now, let's keep the map but make it robust to index lookup.
             const map = {
                 'dashboard': 0,
                 'add-item': 1,
@@ -1325,10 +1335,23 @@
                 'reports': 4,
                 'user-management': 5,
                 'settings': 6,
-                'profile': 7
+                // Divider is usually between settings and profile, causing index shift?
+                // Profile is at the bottom after spacer
+                // Let's rely on finding the element by text content or onclick for better robustness in future.
+                // For now, let's just try to highlight if we find the matching nav element.
             };
-            if (map[id] !== undefined) {
-                document.querySelectorAll('.nav-item')[map[id]].classList.add('active');
+
+            // Robust highlighting: find nav item with the onclick handler matching the id
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                if (item.getAttribute('onclick') && item.getAttribute('onclick').includes(`'${id}'`)) {
+                    item.classList.add('active');
+                }
+            });
+
+            // Fallback for profile which might have different onclick
+            if (id === 'profile') {
+                navItems.forEach(item => { if (item.innerText.includes('Profile')) item.classList.add('active'); });
             }
 
             if (id === 'check-stock') renderStockTable();
@@ -1615,31 +1638,70 @@
         // --- USER MANAGEMENT FUNCTIONS ---
 
         async function fetchCurrentUser() {
+            console.log('Fetching current user...');
+
+            // Visual feedback that we are trying to load
+            const nameEl = document.getElementById('sidebar-username');
+            if (nameEl) nameEl.innerText = "Loading...";
+
             try {
                 const res = await fetch(`${API_URL}/users/current`, getFetchOptions());
 
                 if (res.status === 401) {
+                    console.warn('Session expired (401)');
                     await logout('Your session has expired. Please login again.');
                     return;
                 }
 
-                if (!res.ok) throw new Error('Failed to fetch current user');
+                if (!res.ok) throw new Error(`Failed to fetch current user: ${res.status}`);
+
                 currentUser = await res.json();
+                console.log('Current User Data:', currentUser);
+
+                // Handle potential case sensitivity (Username vs username, Role vs role)
+                let username = currentUser.Username || currentUser.username || 'User';
+                let role = currentUser.Role || currentUser.role || 'User';
+
+                // Normalize
+                username = String(username).trim();
+                role = String(role).trim();
 
                 // Update UI with current user info
-                document.getElementById('current-username').innerText = currentUser.Username;
-                const roleBadge = document.getElementById('current-user-role-badge');
-                roleBadge.innerText = currentUser.Role;
-                roleBadge.className = `role-badge role-${currentUser.Role.toLowerCase()}`;
+                if (nameEl) nameEl.innerText = username;
+
+                const roleBadge = document.getElementById('sidebar-role');
+                if (roleBadge) {
+                    roleBadge.innerText = role;
+                    roleBadge.className = `role-badge role-${role.toLowerCase()}`;
+                }
+
+                // Update Initials
+                const initialsEl = document.getElementById('sidebar-initials');
+                if (initialsEl && username) {
+                    initialsEl.innerText = username.charAt(0).toUpperCase();
+                }
 
                 // Show/hide User Management and Settings menu based on role
-                if (currentUser.Role === 'Admin') {
-                    document.getElementById('user-management-nav').style.display = 'block';
-                    document.getElementById('settings-nav').style.display = 'block';
-                    document.getElementById('reset-data-nav').style.display = 'block';
+                // Check for 'Admin' or 'admin'
+                if (role.toLowerCase() === 'admin') {
+                    console.log('Admin user detected, showing admin tabs');
+                    const navIds = ['user-management-nav', 'settings-nav', 'reset-data-nav'];
+                    navIds.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            // Force visibility
+                            el.style.setProperty('display', 'flex', 'important');
+                            el.classList.remove('hidden'); // Ensure hidden class is removed if present
+                        } else {
+                            console.warn(`Nav element ${id} not found`);
+                        }
+                    });
+                } else {
+                    console.log(`User role '${role}' is not admin, hiding admin tabs`);
                 }
             } catch (err) {
                 console.error('Error fetching current user:', err);
+                if (nameEl) nameEl.innerText = "Error";
             }
         }
 
@@ -1695,8 +1757,12 @@
                 if (user.Account_Status === 'Locked') statusClass = 'status-locked';
 
                 // Show unlock button for locked accounts
+                // Show unlock button for locked accounts
+                // Use margin-bottom: 0 for these stacked buttons
+                const btnStyle = "margin: 0; width: 100%; text-align: center; justify-content: center;";
+
                 const unlockBtn = user.Account_Status === 'Locked'
-                    ? `<button class="action-btn" onclick="unlockUserAccount('${user.Username}')" title="Unlock Account" style="background: var(--warning); color: white;">🔓</button>`
+                    ? `<button class="action-btn" onclick="unlockUserAccount('${user.Username}')" title="Unlock Account" style="background: var(--warning); color: white; border: none; ${btnStyle}">Unlock</button>`
                     : '';
 
                 tr.innerHTML = `
@@ -1708,10 +1774,12 @@
                     <td style="font-size: 0.875rem">${user.Last_Login || 'Never'}</td>
                     <td style="font-size: 0.875rem">${user.Created_Date || '-'}</td>
                     <td>
-                        ${unlockBtn}
-                        <button class="action-btn" onclick="openEditUserModal('${user.User_ID}')" title="Edit">✏️</button>
-                        <button class="action-btn" onclick="openResetPasswordModal('${user.User_ID}', '${user.Username}')" title="Reset Password">🔑</button>
-                        <button class="action-btn danger" onclick="openDeleteUserModal('${user.User_ID}', '${user.Username}')" title="Delete">🗑️</button>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem; min-width: 80px;">
+                            ${unlockBtn}
+                            <button class="action-btn" style="${btnStyle}" onclick="openEditUserModal('${user.User_ID}')">Edit</button>
+                            <button class="action-btn" style="${btnStyle}" onclick="openResetPasswordModal('${user.User_ID}', '${user.Username}')">Reset PW</button>
+                            <button class="action-btn danger" style="${btnStyle}" onclick="openDeleteUserModal('${user.User_ID}', '${user.Username}')">Delete</button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
