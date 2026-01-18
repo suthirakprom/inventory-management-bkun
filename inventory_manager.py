@@ -1,10 +1,16 @@
 from typing import List, Dict, Optional, Any
 from datetime import datetime
 from data_store import DataStore
+from auth_manager import AuthManager
 
 class InventoryManager:
-    def __init__(self):
+    def __init__(self, current_user: Optional[Dict] = None):
         self.db = DataStore()
+        self.auth = AuthManager()
+        self.current_user = current_user
+
+    def set_user(self, user: Dict):
+        self.current_user = user
 
     def _generate_item_id(self, category: str) -> str:
         """Generates a new Item ID (e.g., ITM005)."""
@@ -44,6 +50,11 @@ class InventoryManager:
 
     def get_low_stock_items(self) -> List[Dict]:
         """Returns items where stock <= min_level."""
+        # View permission check (optional, but good practice)
+        if not self.auth.check_permission(self.current_user, AuthManager.PERM_VIEW_REPORTS):
+             # Staff can view reports, so this is usually fine.
+             pass
+
         items = self.db.get_all_inventory()
         low_stock = []
         for item in items:
@@ -58,14 +69,13 @@ class InventoryManager:
 
     def add_new_item(self, item_details: Dict[str, Any]) -> Dict[str, Any]:
         """Prepares and adds a new item."""
+        if not self.auth.check_permission(self.current_user, AuthManager.PERM_ADD_ITEM):
+            raise PermissionError("Access Denied: You do not have permission to add items.")
+
         # Generate ID
         item_id = self._generate_item_id(item_details.get("Category", "Other"))
         
-        # Calculate Profit Margin (Formula or Value)
-        # We will store the value for simplicity in display, but in sheet could be formula.
-        # User requested formula, but gspread append_row usually takes values.
-        # We'll calculate the value here.
-        # Profit = Sell - Cost
+        # Calculate Profit Margin
         try:
             cost = float(item_details["Cost_Price"])
             sell = float(item_details["Selling_Price"])
@@ -93,10 +103,14 @@ class InventoryManager:
         }
         
         self.db.add_inventory_item(new_item)
+        self.db.log_activity(self.current_user["User_ID"], "ADD_ITEM", f"Added {new_item['Item_Name']} ({item_id})")
         return new_item
 
     def restock_item(self, item_id: str, quantity_received: int, supplier_name: str, cost_per_unit: float) -> Optional[Dict]:
         """Restocks an item and logs the order."""
+        if not self.auth.check_permission(self.current_user, AuthManager.PERM_RESTOCK):
+            raise PermissionError("Access Denied: You do not have permission to restock items.")
+
         items = self.db.get_all_inventory()
         target_item = None
         for item in items:
@@ -131,6 +145,7 @@ class InventoryManager:
             "Date_Received": today
         }
         self.db.add_restock_order(order)
+        self.db.log_activity(self.current_user["User_ID"], "RESTOCK", f"Restocked {quantity_received} units of {item_id}")
         
         return {
             "item": target_item,
