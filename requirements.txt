@@ -1,3 +1,7 @@
 gspread
 oauth2client
 rich
+fastapi
+uvicorn
+pydantic
+bcrypt
