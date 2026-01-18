@@ -1,0 +1,4 @@
+Item_ID,Item_Name,Quantity_In_Stock,Selling_Price,Min_Stock_Level
+ITM001,Brown Leather Handbag,20,35.00,5
+ITM005,Black Leather Wallet,3,25.00,5
+ITM009,Running Shoes,2,120.00,10
