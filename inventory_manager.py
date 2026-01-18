@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional, Any
 from datetime import datetime
-from data_store import DataStore
+from supabase_store import SupabaseStore as DataStore
 from auth_manager import AuthManager
 
 class InventoryManager:

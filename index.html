@@ -449,12 +449,49 @@
                 padding: 1rem;
                 padding-top: 4.5rem;
                 overflow-y: auto;
-                height: calc(100vh - 4.5rem);
+                height: 100vh;
+                /* Use full height for scrolling */
             }
 
             .grid-4 {
                 grid-template-columns: 1fr;
                 gap: 1rem;
+            }
+
+            /* Responsive Table Container */
+            .table-container {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-bottom: 1rem;
+                border: 1px solid #334155;
+                border-radius: 0.5rem;
+            }
+
+            table {
+                min-width: 600px;
+                /* Force scroll */
+            }
+
+            /* Mobile Forms */
+            .search-bar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            select option {
+                padding: 10px;
+                /* Larger touch targets */
+            }
+
+            .user-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .user-header .btn {
+                width: 100%;
             }
 
             .modal-content {
@@ -745,20 +782,22 @@
                         <option value="low">Low Stock Only</option>
                     </select>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Category</th>
-                            <th>Stock</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="stock-table-body">
-                        <!-- Populated by JS -->
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Stock</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stock-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -800,23 +839,25 @@
                             id="user-count">0</span></div>
                 </div>
 
-                <table>
-                    <thead>
-                        <tr>
-                            <th>User ID</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Last Login</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="users-table-body">
-                        <!-- Populated by JS -->
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 

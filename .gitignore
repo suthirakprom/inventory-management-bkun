@@ -6,3 +6,8 @@ __pycache__/
 venv/
 .idea/
 .vscode/
+migration/data_*/
+server.log
+test_app_supabase.py
+test_db_ops.py
+*.log

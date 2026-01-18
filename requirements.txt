@@ -1,7 +1,6 @@
-gspread
-oauth2client
-rich
 fastapi
 uvicorn
-pydantic
-bcrypt
+gspread
+oauth2client
+python-dotenv
+supabase

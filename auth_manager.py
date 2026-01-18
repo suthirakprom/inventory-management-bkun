@@ -1,7 +1,7 @@
 import bcrypt
 from typing import Dict, Optional, List
 from datetime import datetime
-from data_store import DataStore
+from supabase_store import SupabaseStore as DataStore
 
 class AuthManager:
     # Role Definitions
