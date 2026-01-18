@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - StockMinds</title>
+    <title>IMS | Login</title>
     <style>
         * {
             margin: 0;
@@ -12,7 +12,20 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --bg-light: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #8b5cf6;
+            --danger: #ef4444;
+            --success: #10b981;
+            --border-color: #e2e8f0;
+        }
+
         body {
+            margin: 0;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
             display: flex;
@@ -66,18 +79,6 @@
             margin-bottom: 0.5rem;
         }
 
-        .logo-text {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 0.25rem;
-        }
-
-        .logo-subtitle {
-            font-size: 0.9rem;
-            color: #64748b;
-        }
-
         .welcome-text {
             text-align: center;
             color: #475569;
@@ -110,14 +111,18 @@
             font-size: 1.25rem;
         }
 
-        input {
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
             width: 100%;
-            padding: 0.875rem 1rem 0.875rem 3rem;
-            border: 2px solid #e2e8f0;
-            border-radius: 0.75rem;
+            padding: 0.875rem 1rem;
+            border: 1.5px solid var(--border-color);
+            border-radius: 0.5rem;
             font-size: 1rem;
+            background: var(--bg-light);
+            color: var(--text-primary);
             transition: all 0.2s;
-            outline: none;
+            box-sizing: border-box;
         }
 
         input:focus {
@@ -314,9 +319,12 @@
     <!-- Login Container -->
     <div class="login-container" id="login-container">
         <div class="logo">
-            <div class="logo-icon">🔹</div>
-            <div class="logo-text">StockMinds</div>
-            <div class="logo-subtitle">Intelligent Inventory System</div>
+            <span style="font-size: 2.5rem;">📊</span>
+            <span
+                style="font-size: 1.75rem; font-weight: 700; background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">IMS</span>
+            <h1 style="font-size: 1.5rem; font-weight: 600; margin: 1rem 0 0.5rem; color: var(--text-primary);">Welcome
+                Back</h1>
+            <p style="color: var(--text-secondary); margin: 0 0 2rem;">Inventory Management System</p>
         </div>
 
         <div class="welcome-text">Sign in to your account</div>
