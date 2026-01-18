@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - StockMinds</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 420px;
+            padding: 3rem 2.5rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo-text {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .logo-subtitle {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .welcome-text {
+            text-align: center;
+            color: #475569;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #334155;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 1.25rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.875rem 1rem 0.875rem 3rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #94a3b8;
+            font-size: 1.25rem;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 0.5rem;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 400;
+            color: #64748b;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-login:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-login.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        .btn-login.loading::after {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 0.875rem 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            padding: 0.875rem 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .footer-text {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin-top: 1.5rem;
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .forgot-password a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        /* Initial Setup Screen */
+        .setup-container {
+            display: none;
+        }
+
+        .setup-container.show {
+            display: block;
+        }
+
+        .login-container.hide {
+            display: none;
+        }
+
+        .setup-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .setup-header h2 {
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .setup-header p {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem 1.5rem;
+            }
+
+            .logo-text {
+                font-size: 1.5rem;
+            }
+
+            input {
+                font-size: 16px;
+                /* Prevents zoom on iOS */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login Container -->
+    <div class="login-container" id="login-container">
+        <div class="logo">
+            <div class="logo-icon">🔹</div>
+            <div class="logo-text">StockMinds</div>
+            <div class="logo-subtitle">Intelligent Inventory System</div>
+        </div>
+
+        <div class="welcome-text">Sign in to your account</div>
+
+        <div id="message-area"></div>
+
+        <form id="login-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="username" placeholder="Enter your username" required autocomplete="username"
+                        autofocus>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="password" placeholder="Enter your password" required
+                        autocomplete="current-password">
+                    <span class="password-toggle" onclick="togglePassword()">👁️</span>
+                </div>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="remember-me">
+                <label for="remember-me">Remember me</label>
+            </div>
+
+            <button type="submit" class="btn-login" id="login-btn">Login</button>
+        </form>
+
+        <div class="forgot-password">
+            <a href="#" onclick="showForgotPassword(event)">Forgot your password?</a>
+        </div>
+
+        <div class="footer-text">
+            Contact your administrator if you need assistance
+        </div>
+    </div>
+
+    <!-- Initial Setup Container -->
+    <div class="login-container setup-container" id="setup-container">
+        <div class="setup-header">
+            <div class="logo-icon">🎉</div>
+            <h2>Welcome to StockMinds!</h2>
+            <p>Let's create your admin account to get started</p>
+        </div>
+
+        <div id="setup-message-area"></div>
+
+        <form id="setup-form" onsubmit="handleSetup(event)">
+            <div class="form-group">
+                <label for="setup-username">Admin Username</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">👤</span>
+                    <input type="text" id="setup-username" placeholder="Choose a username" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="setup-email">Email (Optional)</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">📧</span>
+                    <input type="email" id="setup-email" placeholder="your.email@example.com">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="setup-password">Password</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="setup-password" placeholder="At least 8 characters" required
+                        minlength="8">
+                    <span class="password-toggle" onclick="toggleSetupPassword()">👁️</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="setup-confirm-password">Confirm Password</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="setup-confirm-password" placeholder="Re-enter password" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login" id="setup-btn">Create Admin Account</button>
+        </form>
+    </div>
+
+    <!-- Session Management Script -->
+    <script src="session.js"></script>
+
+    <script>
+        // Check for URL parameters (messages, reasons)
+        window.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const message = params.get('message');
+            const reason = params.get('reason');
+
+            if (message) {
+                showSuccess(message);
+            } else if (reason === 'inactivity') {
+                showError('You were logged out due to inactivity');
+            } else if (reason === 'no_session') {
+                showError('Please log in to continue');
+            }
+
+            // Check if initial setup is needed
+            checkInitialSetup();
+        });
+
+        // Check if initial setup is needed
+        async function checkInitialSetup() {
+            try {
+                const response = await fetch('/auth/check-initial-setup');
+                const data = await response.json();
+
+                if (data.needs_setup) {
+                    // Show setup screen
+                    document.getElementById('login-container').classList.add('hide');
+                    document.getElementById('setup-container').classList.add('show');
+                }
+            } catch (error) {
+                console.error('Error checking initial setup:', error);
+                // If error, assume setup not needed and show login
+            }
+        }
+
+        // Toggle password visibility
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggle = document.querySelector('.password-toggle');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggle.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                toggle.textContent = '👁️';
+            }
+        }
+
+        function toggleSetupPassword() {
+            const passwordInput = document.getElementById('setup-password');
+            const toggles = document.querySelectorAll('.setup-container .password-toggle');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                document.getElementById('setup-confirm-password').type = 'text';
+                toggles.forEach(t => t.textContent = '🙈');
+            } else {
+                passwordInput.type = 'password';
+                document.getElementById('setup-confirm-password').type = 'password';
+                toggles.forEach(t => t.textContent = '👁️');
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const messageArea = document.getElementById('message-area');
+            messageArea.innerHTML = `<div class="error-message show">${message}</div>`;
+
+            setTimeout(() => {
+                const errorMsg = messageArea.querySelector('.error-message');
+                if (errorMsg) errorMsg.classList.remove('show');
+            }, 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const messageArea = document.getElementById('message-area');
+            messageArea.innerHTML = `<div class="success-message show">${message}</div>`;
+
+            setTimeout(() => {
+                const successMsg = messageArea.querySelector('.success-message');
+                if (successMsg) successMsg.classList.remove('show');
+            }, 5000);
+        }
+
+        // Handle login form submission
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('remember-me').checked;
+            const loginBtn = document.getElementById('login-btn');
+
+            // Validation
+            if (!username || !password) {
+                showError('Please enter both username and password');
+                return;
+            }
+
+            // Show loading state
+            loginBtn.disabled = true;
+            loginBtn.classList.add('loading');
+
+            try {
+                // Call login API
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || data.detail || 'Login failed');
+                }
+
+                // Store session
+                setSession(data.user, data.session_token, rememberMe);
+
+                // Show success and redirect
+                showSuccess(`Welcome back, ${data.user.username || data.user.Username}!`);
+
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+
+            } catch (error) {
+                showError(error.message);
+
+                // Clear password field on error
+                document.getElementById('password').value = '';
+                document.getElementById('password').focus();
+            } finally {
+                // Remove loading state
+                loginBtn.disabled = false;
+                loginBtn.classList.remove('loading');
+            }
+        }
+
+        // Handle initial setup form submission
+        async function handleSetup(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('setup-username').value.trim();
+            const email = document.getElementById('setup-email').value.trim();
+            const password = document.getElementById('setup-password').value;
+            const confirmPassword = document.getElementById('setup-confirm-password').value;
+            const setupBtn = document.getElementById('setup-btn');
+            const messageArea = document.getElementById('setup-message-area');
+
+            // Validation
+            if (!username) {
+                messageArea.innerHTML = '<div class="error-message show">Username is required</div>';
+                return;
+            }
+
+            if (password.length < 8) {
+                messageArea.innerHTML = '<div class="error-message show">Password must be at least 8 characters</div>';
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                messageArea.innerHTML = '<div class="error-message show">Passwords do not match</div>';
+                return;
+            }
+
+            // Show loading state
+            setupBtn.disabled = true;
+            setupBtn.classList.add('loading');
+
+            try {
+                // Call initial setup API
+                const response = await fetch('/auth/initial-setup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || data.detail || 'Setup failed');
+                }
+
+                // Show success
+                messageArea.innerHTML = '<div class="success-message show">Admin account created successfully! Redirecting to login...</div>';
+
+                // Switch to login screen after 2 seconds
+                setTimeout(() => {
+                    document.getElementById('setup-container').classList.remove('show');
+                    document.getElementById('login-container').classList.remove('hide');
+
+                    // Pre-fill username
+                    document.getElementById('username').value = username;
+                    document.getElementById('password').focus();
+
+                    showSuccess('Account created! Please log in.');
+                }, 2000);
+
+            } catch (error) {
+                messageArea.innerHTML = `<div class="error-message show">${error.message}</div>`;
+            } finally {
+                // Remove loading state
+                setupBtn.disabled = false;
+                setupBtn.classList.remove('loading');
+            }
+        }
+
+        // Show forgot password info
+        function showForgotPassword(event) {
+            event.preventDefault();
+            showError('Please contact your administrator to reset your password.');
+        }
+
+        // Auto-focus on username field
+        window.addEventListener('DOMContentLoaded', () => {
+            const usernameField = document.getElementById('username');
+            if (usernameField && !document.getElementById('setup-container').classList.contains('show')) {
+                usernameField.focus();
+            }
+        });
+    </script>
+</body>
+
+</html>

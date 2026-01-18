@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StockMinds | Intelligent Inventory System</title>
+    <!-- Session Management -->
+    <script src="session.js"></script>
     <style>
         :root {
             --bg-dark: #0f172a;
@@ -37,6 +39,7 @@
             display: flex;
             flex-direction: column;
             padding: 1.5rem;
+            box-sizing: border-box;
         }
 
         #main-content {
@@ -359,10 +362,199 @@
             gap: 1rem;
             margin-bottom: 1.5rem;
         }
+
+        /* Mobile Menu Toggle */
+        #menu-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            background: var(--bg-card);
+            border: 1px solid #334155;
+            color: white;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+
+            /* Tablet */
+            #sidebar {
+                width: 200px;
+                padding: 1rem;
+            }
+
+            #main-content {
+                padding: 1.5rem;
+            }
+
+            .grid-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .nav-item {
+                padding: 0.65rem 0.85rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+
+            /* Mobile */
+            body {
+                flex-direction: column;
+                overflow: visible;
+            }
+
+            #menu-toggle {
+                display: block;
+            }
+
+            #sidebar {
+                position: fixed;
+                left: -100%;
+                top: 0;
+                height: 100vh;
+                width: 260px;
+                z-index: 1000;
+                transition: left 0.3s ease;
+                padding: 1.5rem;
+                padding-left: 1.5rem;
+                padding-right: 1rem;
+                padding-top: 4rem;
+                overflow-y: auto;
+                box-sizing: border-box;
+            }
+
+            #sidebar.mobile-open {
+                left: 0;
+                box-shadow: 2px 0 20px rgba(0, 0, 0, 0.7);
+            }
+
+            #main-content {
+                width: 100%;
+                padding: 1rem;
+                padding-top: 4.5rem;
+                overflow-y: auto;
+                height: calc(100vh - 4.5rem);
+            }
+
+            .grid-4 {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .modal-content {
+                width: 95%;
+                max-width: 95%;
+                padding: 1.5rem;
+            }
+
+            table {
+                font-size: 0.875rem;
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            th,
+            td {
+                padding: 0.75rem 0.5rem;
+                min-width: 80px;
+            }
+
+            .form-group {
+                margin-bottom: 1rem;
+            }
+
+            input,
+            select,
+            textarea {
+                font-size: 16px;
+                /* Prevents zoom on iOS */
+            }
+
+            .card {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+            }
+
+            .user-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .user-header .btn {
+                width: 100%;
+            }
+
+            .search-bar {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+
+            /* Small Mobile */
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.25rem;
+            }
+
+            h2 {
+                font-size: 1.125rem;
+            }
+
+            .btn {
+                padding: 0.65rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            #main-content {
+                padding: 0.75rem;
+                padding-top: 4rem;
+            }
+
+            .card {
+                padding: 0.875rem;
+                margin-bottom: 1rem;
+            }
+
+            .action-btn {
+                padding: 0.35rem;
+                font-size: 0.8rem;
+                margin: 0 0.125rem;
+            }
+        }
     </style>
 </head>
 
 <body>
+
+    <!-- Mobile Menu Toggle -->
+    <button id="menu-toggle" onclick="toggleMobileMenu()">☰</button>
 
     <!-- SETTINGS MODAL -->
     <div id="settings-modal" class="modal hidden">
@@ -406,19 +598,22 @@
             <span id="current-user-role-badge" class="role-badge"></span>
         </div>
 
-        <div class="nav-item active" onclick="showSection('dashboard')">📊 Dashboard</div>
-        <div class="nav-item" onclick="showSection('add-item')">📦 Add New Item</div>
-        <div class="nav-item" onclick="showSection('record-sale')">💰 Record Sale</div>
-        <div class="nav-item" onclick="showSection('check-stock')">🔍 Check Stock</div>
-        <div class="nav-item" onclick="showSection('reports')">📈 Reports</div>
-        <div class="nav-item" id="user-management-nav" onclick="showSection('user-management')" style="display: none;">
+        <div class="nav-item active" onclick="showSectionMobile('dashboard')">📊 Dashboard</div>
+        <div class="nav-item" onclick="showSectionMobile('add-item')">📦 Add New Item</div>
+        <div class="nav-item" onclick="showSectionMobile('record-sale')">💰 Record Sale</div>
+        <div class="nav-item" onclick="showSectionMobile('check-stock')">🔍 Check Stock</div>
+        <div class="nav-item" onclick="showSectionMobile('reports')">📈 Reports</div>
+        <div class="nav-item" id="user-management-nav" onclick="showSectionMobile('user-management')"
+            style="display: none;">
             👥 User Management</div>
+        <div class="nav-item" id="settings-nav" onclick="showSectionMobile('settings')" style="display: none;">⚙️
+            Settings</div>
 
         <div style="flex: 1"></div>
-        <div class="nav-item" onclick="showSection('profile')">👤 Profile</div>
-        <div class="nav-item" onclick="resetData()" style="color: var(--danger)">⚠️ Reset Data</div>
-        <div class="nav-item" onclick="openSettings()" style="color: var(--text-secondary); font-size: 0.9em">⚙️
-            Settings</div>
+        <div class="nav-item" onclick="showSectionMobile('profile')">👤 Profile</div>
+        <div class="nav-item" onclick="handleLogout()" style="color: var(--accent-primary)">🚪 Logout</div>
+        <div id="reset-data-nav" class="nav-item" onclick="resetData()" style="color: var(--danger); display: none;">⚠️
+            Reset Data</div>
     </div>
 
     <!-- MAIN CONTENT -->
@@ -654,6 +849,35 @@
             </div>
         </div>
 
+        <!-- SETTINGS (Admin Only) -->
+        <div id="settings" class="section hidden">
+            <h1>System Settings</h1>
+            <div class="card" style="max-width: 600px;">
+                <h2>AI Agent Configuration</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    Configure API keys to enable AI Agent features for Reports and Insights.
+                    <br><br>
+                    <small>These settings are optional and stored locally in your browser.</small>
+                </p>
+
+                <div class="form-group">
+                    <label>Anthropic API Key (Optional)</label>
+                    <input type="password" id="settings-api-key" placeholder="sk-ant-...">
+                </div>
+
+                <div class="form-group">
+                    <label>Google Sheet ID (Optional)</label>
+                    <input type="text" id="settings-sheet-id" placeholder="1BxiMvs...">
+                    <small style="color: var(--text-secondary); font-size: 0.85rem;">For custom Google Sheet
+                        integration</small>
+                </div>
+
+                <div id="settings-message"></div>
+
+                <button class="btn" onclick="saveSystemSettings()">Save Settings</button>
+            </div>
+        </div>
+
     </div>
 
     <!-- ADD USER MODAL -->
@@ -780,19 +1004,57 @@
 
         // --- INIT ---
         window.onload = function () {
-            if (!apiKey) {
-                document.getElementById('settings-modal').classList.remove('hidden');
+            // Check for valid session before loading app
+            if (!isSessionValid()) {
+                window.location.href = 'login.html?reason=no_session';
+                return;
             }
+
+            // Initialize session management (inactivity timer, etc.)
+            initSessionManagement();
+
+            // Load app data
             fetchData();
             fetchCurrentUser();
-        };
+        }
+
+        // Helper function to get fetch options with auth headers
+        function getFetchOptions(method = 'GET', body = null) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...getAuthHeaders()
+                }
+            };
+
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            return options;
+        }
+
+        // Handle logout
+        async function handleLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                await logout('You have been logged out successfully');
+            }
+        }
 
         async function fetchData() {
             const statusBox = document.getElementById('ai-insight-box');
             statusBox.innerHTML = '🔄 Connecting to local server...';
 
             try {
-                const res = await fetch(`${API_URL}/inventory`);
+                const res = await fetch(`${API_URL}/inventory`, getFetchOptions());
+
+                // Check if unauthorized (session expired)
+                if (res.status === 401) {
+                    await logout('Your session has expired. Please login again.');
+                    return;
+                }
+
                 if (!res.ok) throw new Error(`Server returned ${res.status} ${res.statusText}`);
                 inventory = await res.json();
 
@@ -829,36 +1091,36 @@
 
         // Removed seedData and saveData (localStorage) as we now persist to Server/GSheets
 
-        function openSettings() {
-            document.getElementById('settings-modal').classList.remove('hidden');
-            document.getElementById('api-key-input').value = apiKey;
-            document.getElementById('sheet-id-input').value = sheetId;
+        // --- SETTINGS FUNCTIONS ---
+
+        function saveSystemSettings() {
+            const key = document.getElementById('settings-api-key').value;
+            const sheet = document.getElementById('settings-sheet-id').value;
+            const messageDiv = document.getElementById('settings-message');
+
+            // Save to localStorage
+            localStorage.setItem('anthropicKey', key || '');
+            localStorage.setItem('sheetId', sheet || '');
+            apiKey = key || '';
+            sheetId = sheet || '';
+
+            messageDiv.innerHTML = '<div class=\"success-message\">Settings saved successfully!</div>';
+
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 3000);
         }
 
-        function skipSettings() {
-            document.getElementById('settings-modal').classList.add('hidden');
-        }
-
-        function saveSettings() {
-            const key = document.getElementById('api-key-input').value;
-            const sheet = document.getElementById('sheet-id-input').value;
-            if (key) {
-                localStorage.setItem('anthropicKey', key);
-                localStorage.setItem('sheetId', sheet);
-                apiKey = key;
-                sheetId = sheet;
-                document.getElementById('settings-modal').classList.add('hidden');
-            } else {
-                if (confirm("Running without an API key means agents won't work. Continue?")) {
-                    document.getElementById('settings-modal').classList.add('hidden');
-                }
-            }
+        // Load settings when Settings page is opened
+        function loadSystemSettings() {
+            document.getElementById('settings-api-key').value = apiKey || '';
+            document.getElementById('settings-sheet-id').value = sheetId || '';
         }
 
         // --- NAVIGATION ---
         function showSection(id) {
-            // Check if trying to access user management without admin role
-            if (id === 'user-management') {
+            // Check if trying to access admin-only pages without admin role
+            if (id === 'user-management' || id === 'settings') {
                 if (!currentUser || currentUser.Role !== 'Admin') {
                     // Redirect to dashboard and show error message
                     id = 'dashboard';  // Change id to dashboard
@@ -868,14 +1130,20 @@
                             <div style="color: var(--danger); font-size: 1rem;">
                                 <strong>⛔ Access Denied</strong><br>
                                 <span style="color: var(--text-secondary); font-size: 0.9rem;">
-                                    You do not have permission to view User Management. This feature is only available to Admin users.
+                                    You do not have permission to view this page. This feature is only available to Admin users.
                                 </span>
                             </div>
                         `;
                     }
                 } else {
                     // Fetch users when showing user management (Admin only)
-                    fetchUsers();
+                    if (id === 'user-management') {
+                        fetchUsers();
+                    }
+                    // Load settings when showing settings page (Admin only)
+                    if (id === 'settings') {
+                        loadSystemSettings();
+                    }
                 }
             }
 
@@ -891,7 +1159,8 @@
                 'check-stock': 3,
                 'reports': 4,
                 'user-management': 5,
-                'profile': 6
+                'settings': 6,
+                'profile': 7
             };
             if (map[id] !== undefined) {
                 document.querySelectorAll('.nav-item')[map[id]].classList.add('active');
@@ -971,7 +1240,7 @@
                 // Submit to Server
                 const res = await fetch(`${API_URL}/items/add`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                     body: JSON.stringify(itemPayload)
                 });
 
@@ -1053,7 +1322,7 @@
                 // Submit to Server
                 const res = await fetch(`${API_URL}/sales/record`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                     body: JSON.stringify({
                         item_id: itemId,
                         qty: qty,
@@ -1157,7 +1426,13 @@
 
         async function fetchCurrentUser() {
             try {
-                const res = await fetch(`${API_URL}/users/current`);
+                const res = await fetch(`${API_URL}/users/current`, getFetchOptions());
+
+                if (res.status === 401) {
+                    await logout('Your session has expired. Please login again.');
+                    return;
+                }
+
                 if (!res.ok) throw new Error('Failed to fetch current user');
                 currentUser = await res.json();
 
@@ -1167,9 +1442,11 @@
                 roleBadge.innerText = currentUser.Role;
                 roleBadge.className = `role-badge role-${currentUser.Role.toLowerCase()}`;
 
-                // Show/hide User Management menu based on role
+                // Show/hide User Management and Settings menu based on role
                 if (currentUser.Role === 'Admin') {
                     document.getElementById('user-management-nav').style.display = 'block';
+                    document.getElementById('settings-nav').style.display = 'block';
+                    document.getElementById('reset-data-nav').style.display = 'block';
                 }
             } catch (err) {
                 console.error('Error fetching current user:', err);
@@ -1180,7 +1457,7 @@
             const tbody = document.getElementById('users-table-body');
 
             try {
-                const res = await fetch(`${API_URL}/users`);
+                const res = await fetch(`${API_URL}/users`, getFetchOptions());
                 if (!res.ok) {
                     const errorText = await res.text();
                     throw new Error(`Failed to fetch users: ${res.status} ${res.statusText}`);
@@ -1227,6 +1504,11 @@
                 if (user.Account_Status === 'Suspended') statusClass = 'status-suspended';
                 if (user.Account_Status === 'Locked') statusClass = 'status-locked';
 
+                // Show unlock button for locked accounts
+                const unlockBtn = user.Account_Status === 'Locked'
+                    ? `<button class="action-btn" onclick="unlockUserAccount('${user.Username}')" title="Unlock Account" style="background: var(--warning); color: white;">🔓</button>`
+                    : '';
+
                 tr.innerHTML = `
                     <td style="font-family: monospace; color: var(--text-secondary)">${user.User_ID}</td>
                     <td style="font-weight: 500">${user.Username}</td>
@@ -1236,6 +1518,7 @@
                     <td style="font-size: 0.875rem">${user.Last_Login || 'Never'}</td>
                     <td style="font-size: 0.875rem">${user.Created_Date || '-'}</td>
                     <td>
+                        ${unlockBtn}
                         <button class="action-btn" onclick="openEditUserModal('${user.User_ID}')" title="Edit">✏️</button>
                         <button class="action-btn" onclick="openResetPasswordModal('${user.User_ID}', '${user.Username}')" title="Reset Password">🔑</button>
                         <button class="action-btn danger" onclick="openDeleteUserModal('${user.User_ID}', '${user.Username}')" title="Delete">🗑️</button>
@@ -1256,6 +1539,33 @@
         function togglePasswordVisibility(inputId) {
             const input = document.getElementById(inputId);
             input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        // Reset Data (Clear localStorage cache if any)
+        function resetData() {
+            if (confirm('⚠️ Are you sure you want to reset local data?\\n\\nThis will clear your cached inventory data and force a fresh reload from the server.')) {
+                // Clear any localStorage
+                localStorage.removeItem('anthropicKey');
+                localStorage.removeItem('sheetId');
+
+                // Reload the page
+                alert('Local data cleared. Refreshing...');
+                window.location.reload();
+            }
+        }
+
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+
+        // Close mobile menu when clicking a nav item
+        function showSectionMobile(id) {
+            showSection(id);
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+            }
         }
 
         // Add User
@@ -1297,7 +1607,7 @@
             try {
                 const res = await fetch(`${API_URL}/users/create`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                     body: JSON.stringify({ username, email, password, role })
                 });
 
@@ -1350,7 +1660,7 @@
             try {
                 const res = await fetch(`${API_URL}/users/${userId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                     body: JSON.stringify({ username, email, role, status })
                 });
 
@@ -1385,7 +1695,8 @@
 
             try {
                 const res = await fetch(`${API_URL}/users/${userId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
                 });
 
                 if (!res.ok) {
@@ -1434,7 +1745,7 @@
             try {
                 const res = await fetch(`${API_URL}/users/${userId}/reset-password`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                     body: JSON.stringify({ new_password: newPassword })
                 });
 
@@ -1449,6 +1760,33 @@
                 // Don't auto-close so admin can copy the password
             } catch (err) {
                 messageDiv.innerHTML = `<div class="error-message">${err.message}</div>`;
+            }
+        }
+
+        // Unlock User Account (Admin only - for accounts locked due to failed login)
+        async function unlockUserAccount(username) {
+            if (!confirm(`Unlock account for ${username}?\n\nThis will clear any failed login attempt locks.`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/auth/unlock-account?username=${encodeURIComponent(username)}`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.detail || 'Failed to unlock account');
+                }
+
+                const result = await res.json();
+                alert(result.message);
+
+                // Refresh users list to show updated status
+                await fetchUsers();
+            } catch (err) {
+                alert(`Error: ${err.message}`);
             }
         }
 
@@ -1477,7 +1815,7 @@
             try {
                 const res = await fetch(`${API_URL}/users/change-password`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
                     body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
                 });
 
