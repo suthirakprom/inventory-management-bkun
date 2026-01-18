@@ -1,9 +1,15 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+import os
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel
 import uvicorn
 from inventory_manager import InventoryManager
+from auth_manager import AuthManager
 from datetime import datetime
 
 app = FastAPI()
@@ -17,14 +23,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize Manager (Global State)
-# In production, we might want per-request or dependency injection, but this is fine for single-user local tool.
-try:
-    manager = InventoryManager()
-    print("Connected to Google Sheets successfully.")
-except Exception as e:
-    print(f"Failed to connect to Google Sheets: {e}")
-    manager = None
+# --- Security ---
+security = HTTPBasic()
+auth_manager = AuthManager()
+
+def get_current_user(credentials: HTTPBasicCredentials = Depends(security)):
+    """
+    Authenticate user against the USERS sheet using AuthManager.
+    """
+    user = auth_manager.authenticate(credentials.username, credentials.password)
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return user
+
+# --- Dependency ---
+def get_authorized_manager(user: dict = Depends(get_current_user)):
+    """
+    Creates an InventoryManager instance with the authenticated user context.
+    """
+    return InventoryManager(user)
+
+# --- Frontend ---
+# Get the directory where this script is located
+BASE_DIR = Path(__file__).resolve().parent
+
+@app.get("/")
+async def read_index(user: dict = Depends(get_current_user)):
+    index_path = BASE_DIR / "index.html"
+    if not index_path.exists():
+        raise HTTPException(status_code=500, detail=f"index.html not found at {index_path}")
+    return FileResponse(index_path)
 
 # --- Models ---
 class ItemData(BaseModel):
@@ -46,22 +79,15 @@ class SaleData(BaseModel):
 # --- Endpoints ---
 
 @app.get("/inventory")
-def get_inventory():
-    if not manager:
-        raise HTTPException(status_code=500, detail="Database connection unavailable")
+def get_inventory(manager: InventoryManager = Depends(get_authorized_manager)):
     return manager.get_all_items()
 
 @app.get("/items/low_stock")
-def get_low_stock():
-    if not manager:
-        raise HTTPException(status_code=500, detail="Database connection unavailable")
+def get_low_stock(manager: InventoryManager = Depends(get_authorized_manager)):
     return manager.get_low_stock_items()
 
 @app.post("/items/add")
-def add_item(item: ItemData):
-    if not manager:
-        raise HTTPException(status_code=500, detail="Database connection unavailable")
-    
+def add_item(item: ItemData, manager: InventoryManager = Depends(get_authorized_manager)):
     # Map Pydantic model to the dict format expected by InventoryManager
     item_dict = {
         "Category": item.category,
@@ -75,13 +101,13 @@ def add_item(item: ItemData):
         "SKU": item.sku
     }
     
-    return manager.add_new_item(item_dict)
+    try:
+        return manager.add_new_item(item_dict)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
 
 @app.post("/sales/record")
-def record_sale(sale: SaleData):
-    if not manager:
-        raise HTTPException(status_code=500, detail="Database connection unavailable")
-    
+def record_sale(sale: SaleData, manager: InventoryManager = Depends(get_authorized_manager)):
     # 1. Check Stock
     items = manager.get_all_items()
     target = next((i for i in items if str(i.get("Item_ID")) == sale.item_id), None)
@@ -94,26 +120,16 @@ def record_sale(sale: SaleData):
         raise HTTPException(status_code=400, detail=f"Insufficient stock. Only {current_qty} available.")
     
     # 2. Update Inventory (Deduct stock)
-    # The existing Manager doesn't have a specific 'deduct_stock' method exposed cleanly 
-    # except via 'restock_item' which ADDS.
-    # However, DataStore has 'update_inventory_stock'.
-    # We should add a helper in Manager or access DB directly. 
-    # Let's access DB directly via manager.db for expedience, or update Manager.
-    
     new_qty = current_qty - sale.qty
     today = datetime.now().strftime("%Y-%m-%d")
     
-    # Update GSheet
-    # Last restocked date not technically changed, but using today modifies that col. 
-    # If we sell, we probably shouldn't change 'Last_Restocked' date, but the current method signature couples them.
-    # We will pass the EXISTING date to avoid changing it if possible, or just accept today.
-    # Let's read the existing last_restocked
     last_restock_date = target.get("Last_Restocked", today)
+    # Direct DB access via manager.db
     manager.db.update_inventory_stock(sale.item_id, new_qty, str(last_restock_date))
     
-    # 3. Log Sale (Needs a Sales Log sheet which wasn't in original InventoryManager but referenced in user context)
-    # The user context mentioned a "Sales Assistant" and "SALES_LOG" sheet.
-    
+    # Log activity via manager's user context
+    manager.db.log_activity("WEB_SESSION", "RECORD_SALE", f"Sold {sale.qty} of {sale.item_id}")
+
     return {
         "status": "success",
         "sale": {
