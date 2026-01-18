@@ -76,6 +76,26 @@ class SaleData(BaseModel):
     qty: int
     payment_method: str
 
+class UserCreateData(BaseModel):
+    username: str
+    password: str
+    role: str
+    email: Optional[str] = ""
+
+class UserUpdateData(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None
+    status: Optional[str] = None
+
+class PasswordResetData(BaseModel):
+    new_password: str
+
+class PasswordChangeData(BaseModel):
+    current_password: str
+    new_password: str
+
+
 # --- Endpoints ---
 
 @app.get("/inventory")
@@ -140,5 +160,95 @@ def record_sale(sale: SaleData, manager: InventoryManager = Depends(get_authoriz
         }
     }
 
+# --- User Management Endpoints ---
+
+@app.get("/users")
+def get_all_users(user: dict = Depends(get_current_user)):
+    """Get all users (Admin only)"""
+    if user.get("Role") != "Admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    users = auth_manager.db.get_all_users()
+    # Remove password hashes from response
+    for u in users:
+        u.pop("Password_Hash", None)
+    return users
+
+@app.get("/users/current")
+def get_current_user_info(user: dict = Depends(get_current_user)):
+    """Get current authenticated user's information"""
+    user_copy = user.copy()
+    user_copy.pop("Password_Hash", None)
+    return user_copy
+
+@app.post("/users/create")
+def create_user(user_data: UserCreateData, admin_user: dict = Depends(get_current_user)):
+    """Create a new user (Admin only)"""
+    try:
+        new_user = auth_manager.create_user(
+            admin_user,
+            user_data.username,
+            user_data.password,
+            user_data.role,
+            user_data.email
+        )
+        new_user.pop("Password_Hash", None)
+        return new_user
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/users/{user_id}")
+def update_user(user_id: str, user_data: UserUpdateData, admin_user: dict = Depends(get_current_user)):
+    """Update user details (Admin only)"""
+    try:
+        updated_user = auth_manager.update_user(
+            admin_user,
+            user_id,
+            username=user_data.username,
+            email=user_data.email,
+            role=user_data.role,
+            status=user_data.status
+        )
+        updated_user.pop("Password_Hash", None)
+        return updated_user
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/users/{user_id}")
+def delete_user(user_id: str, admin_user: dict = Depends(get_current_user)):
+    """Delete a user (Admin only)"""
+    try:
+        result = auth_manager.delete_user(admin_user, user_id)
+        return result
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.post("/users/{user_id}/reset-password")
+def reset_user_password(user_id: str, password_data: PasswordResetData, admin_user: dict = Depends(get_current_user)):
+    """Admin resets a user's password"""
+    try:
+        result = auth_manager.reset_user_password(admin_user, user_id, password_data.new_password)
+        return result
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@app.post("/users/change-password")
+def change_password(password_data: PasswordChangeData, user: dict = Depends(get_current_user)):
+    """User changes their own password"""
+    try:
+        result = auth_manager.change_password(user, password_data.current_password, password_data.new_password)
+        return result
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+

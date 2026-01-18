@@ -138,7 +138,6 @@
         textarea:focus {
             outline: none;
             border-color: var(--accent-secondary);
-            ring: 2px solid rgba(99, 102, 241, 0.2);
         }
 
         .btn {
@@ -247,6 +246,119 @@
             opacity: 0.7;
             pointer-events: none;
         }
+
+        /* User Management Styles */
+        .role-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .role-admin {
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+        }
+
+        .role-staff {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .status-suspended {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .status-locked {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 1px solid #334155;
+            color: var(--text-secondary);
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+            margin: 0 0.25rem;
+        }
+
+        .action-btn:hover {
+            background: #334155;
+            color: white;
+        }
+
+        .action-btn.danger:hover {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 1px solid #334155;
+            width: 500px;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .password-field {
+            position: relative;
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .success-message {
+            color: var(--accent-primary);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
     </style>
 </head>
 
@@ -286,13 +398,24 @@
         <div class="logo">
             <span>🔹</span> StockMinds
         </div>
+
+        <!-- User Info Header -->
+        <div style="padding: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #334155;">
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">Logged in as:</div>
+            <div style="font-weight: 600; margin-top: 0.25rem;" id="current-username">Loading...</div>
+            <span id="current-user-role-badge" class="role-badge"></span>
+        </div>
+
         <div class="nav-item active" onclick="showSection('dashboard')">📊 Dashboard</div>
         <div class="nav-item" onclick="showSection('add-item')">📦 Add New Item</div>
         <div class="nav-item" onclick="showSection('record-sale')">💰 Record Sale</div>
         <div class="nav-item" onclick="showSection('check-stock')">🔍 Check Stock</div>
         <div class="nav-item" onclick="showSection('reports')">📈 Reports</div>
+        <div class="nav-item" id="user-management-nav" onclick="showSection('user-management')" style="display: none;">
+            👥 User Management</div>
 
         <div style="flex: 1"></div>
+        <div class="nav-item" onclick="showSection('profile')">👤 Profile</div>
         <div class="nav-item" onclick="resetData()" style="color: var(--danger)">⚠️ Reset Data</div>
         <div class="nav-item" onclick="openSettings()" style="color: var(--text-secondary); font-size: 0.9em">⚙️
             Settings</div>
@@ -467,15 +590,193 @@
             </div>
         </div>
 
+        <!-- USER MANAGEMENT (Admin Only) -->
+        <div id="user-management" class="section hidden">
+            <div class="user-header">
+                <h1>User Management</h1>
+                <button class="btn" onclick="openAddUserModal()">+ Add New User</button>
+            </div>
+
+            <div class="card">
+                <div class="search-bar">
+                    <input type="text" id="user-search" placeholder="Search users by username or email..."
+                        onkeyup="renderUsersTable()" style="flex: 1;">
+                    <div style="color: var(--text-secondary); padding: 0.75rem;">Total Users: <span
+                            id="user-count">0</span></div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Last Login</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PROFILE / SETTINGS -->
+        <div id="profile" class="section hidden">
+            <h1>Profile Settings</h1>
+            <div class="card" style="max-width: 600px;">
+                <h2>Change Password</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Update your password. You will be logged
+                    out after changing your password.</p>
+
+                <div class="form-group password-field">
+                    <label>Current Password</label>
+                    <input type="password" id="profile-current-password">
+                </div>
+
+                <div class="form-group password-field">
+                    <label>New Password (min 8 characters)</label>
+                    <input type="password" id="profile-new-password">
+                </div>
+
+                <div class="form-group password-field">
+                    <label>Confirm New Password</label>
+                    <input type="password" id="profile-confirm-password">
+                </div>
+
+                <div id="profile-message"></div>
+
+                <button class="btn" onclick="submitPasswordChange()">Change Password</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ADD USER MODAL -->
+    <div id="add-user-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Add New User</h2>
+            <div class="form-group">
+                <label>Username *</label>
+                <input type="text" id="add-user-username" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label>Email (optional)</label>
+                <input type="email" id="add-user-email" placeholder="user@example.com">
+            </div>
+            <div class="form-group password-field">
+                <label>Password * (min 8 characters)</label>
+                <input type="password" id="add-user-password">
+                <span class="password-toggle" onclick="togglePasswordVisibility('add-user-password')">👁️</span>
+            </div>
+            <div class="form-group password-field">
+                <label>Confirm Password *</label>
+                <input type="password" id="add-user-confirm-password">
+                <span class="password-toggle" onclick="togglePasswordVisibility('add-user-confirm-password')">👁️</span>
+            </div>
+            <div class="form-group">
+                <label>Role *</label>
+                <select id="add-user-role">
+                    <option value="Staff">Staff</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+            <div id="add-user-message"></div>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button class="btn" onclick="submitNewUser()">Create User</button>
+                <button class="btn btn-outline" onclick="closeModal('add-user-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT USER MODAL -->
+    <div id="edit-user-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Edit User</h2>
+            <input type="hidden" id="edit-user-id">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="edit-user-username">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="edit-user-email">
+            </div>
+            <div class="form-group">
+                <label>Role</label>
+                <select id="edit-user-role">
+                    <option value="Staff">Staff</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="edit-user-status">
+                    <option value="Active">Active</option>
+                    <option value="Suspended">Suspended</option>
+                    <option value="Locked">Locked</option>
+                </select>
+            </div>
+            <div id="edit-user-message"></div>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button class="btn" onclick="submitUserUpdate()">Save Changes</button>
+                <button class="btn btn-outline" onclick="closeModal('edit-user-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE USER MODAL -->
+    <div id="delete-user-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <h2 style="color: var(--danger);">⚠️ Delete User</h2>
+            <p>Are you sure you want to delete user <strong id="delete-user-name"></strong>?</p>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">This action cannot be undone.</p>
+            <input type="hidden" id="delete-user-id">
+            <div id="delete-user-message"></div>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button class="btn btn-danger" onclick="confirmDeleteUser()">Delete</button>
+                <button class="btn btn-outline" onclick="closeModal('delete-user-modal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESET PASSWORD MODAL -->
+    <div id="reset-password-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <h2>Reset Password</h2>
+            <p>Reset password for user: <strong id="reset-password-username"></strong></p>
+            <input type="hidden" id="reset-password-user-id">
+            <div class="form-group password-field">
+                <label>New Password (min 8 characters)</label>
+                <input type="password" id="reset-password-new">
+                <span class="password-toggle" onclick="togglePasswordVisibility('reset-password-new')">👁️</span>
+            </div>
+            <div class="form-group password-field">
+                <label>Confirm Password</label>
+                <input type="password" id="reset-password-confirm">
+                <span class="password-toggle" onclick="togglePasswordVisibility('reset-password-confirm')">👁️</span>
+            </div>
+            <div id="reset-password-message"></div>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button class="btn" onclick="submitPasswordReset()">Reset Password</button>
+                <button class="btn btn-outline" onclick="closeModal('reset-password-modal')">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <script>
         // --- STATE MANAGEMENT ---
         let inventory = [];
         let sales = []; // We will fetch sales from logs if available, or track session sales
+        let users = []; // All users (Admin only)
+        let currentUser = null; // Current authenticated user
         let apiKey = localStorage.getItem('anthropicKey') || '';
         let sheetId = localStorage.getItem('sheetId') || '';
-        const API_URL = 'http://127.0.0.1:8000';
+        const API_URL = '';
 
         // --- INIT ---
         window.onload = function () {
@@ -483,6 +784,7 @@
                 document.getElementById('settings-modal').classList.remove('hidden');
             }
             fetchData();
+            fetchCurrentUser();
         };
 
         async function fetchData() {
@@ -555,12 +857,42 @@
 
         // --- NAVIGATION ---
         function showSection(id) {
+            // Check if trying to access user management without admin role
+            if (id === 'user-management') {
+                if (!currentUser || currentUser.Role !== 'Admin') {
+                    // Redirect to dashboard and show error message
+                    id = 'dashboard';  // Change id to dashboard
+                    const insightBox = document.getElementById('ai-insight-box');
+                    if (insightBox) {
+                        insightBox.innerHTML = `
+                            <div style="color: var(--danger); font-size: 1rem;">
+                                <strong>⛔ Access Denied</strong><br>
+                                <span style="color: var(--text-secondary); font-size: 0.9rem;">
+                                    You do not have permission to view User Management. This feature is only available to Admin users.
+                                </span>
+                            </div>
+                        `;
+                    }
+                } else {
+                    // Fetch users when showing user management (Admin only)
+                    fetchUsers();
+                }
+            }
+
             document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
 
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-            const map = { 'dashboard': 0, 'add-item': 1, 'record-sale': 2, 'check-stock': 3, 'reports': 4 };
+            const map = {
+                'dashboard': 0,
+                'add-item': 1,
+                'record-sale': 2,
+                'check-stock': 3,
+                'reports': 4,
+                'user-management': 5,
+                'profile': 6
+            };
             if (map[id] !== undefined) {
                 document.querySelectorAll('.nav-item')[map[id]].classList.add('active');
             }
@@ -820,6 +1152,352 @@
 
             output.innerHTML = `<div class="agent-response" style="margin-top:0">${reply}</div>`;
         }
+
+        // --- USER MANAGEMENT FUNCTIONS ---
+
+        async function fetchCurrentUser() {
+            try {
+                const res = await fetch(`${API_URL}/users/current`);
+                if (!res.ok) throw new Error('Failed to fetch current user');
+                currentUser = await res.json();
+
+                // Update UI with current user info
+                document.getElementById('current-username').innerText = currentUser.Username;
+                const roleBadge = document.getElementById('current-user-role-badge');
+                roleBadge.innerText = currentUser.Role;
+                roleBadge.className = `role-badge role-${currentUser.Role.toLowerCase()}`;
+
+                // Show/hide User Management menu based on role
+                if (currentUser.Role === 'Admin') {
+                    document.getElementById('user-management-nav').style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Error fetching current user:', err);
+            }
+        }
+
+        async function fetchUsers() {
+            const tbody = document.getElementById('users-table-body');
+
+            try {
+                const res = await fetch(`${API_URL}/users`);
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    throw new Error(`Failed to fetch users: ${res.status} ${res.statusText}`);
+                }
+                users = await res.json();
+                renderUsersTable();
+            } catch (err) {
+                console.error('Error fetching users:', err);
+                // Display error in the table instead of blocking alert
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: var(--danger);">
+                            <div style="font-size: 1.25rem; margin-bottom: 0.5rem;">⚠️ Error Loading Users</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">${err.message}</div>
+                            <button class="btn" style="margin-top: 1rem; width: auto; padding: 0.5rem 1rem;" onclick="fetchUsers()">Retry</button>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('user-count').innerText = '0';
+            }
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('users-table-body');
+            const search = document.getElementById('user-search').value.toLowerCase();
+
+            tbody.innerHTML = '';
+
+            let filteredUsers = users;
+            if (search) {
+                filteredUsers = users.filter(u =>
+                    u.Username.toLowerCase().includes(search) ||
+                    (u.Email && u.Email.toLowerCase().includes(search))
+                );
+            }
+
+            document.getElementById('user-count').innerText = filteredUsers.length;
+
+            filteredUsers.forEach(user => {
+                const tr = document.createElement('tr');
+
+                const roleClass = user.Role === 'Admin' ? 'role-admin' : 'role-staff';
+                let statusClass = 'status-active';
+                if (user.Account_Status === 'Suspended') statusClass = 'status-suspended';
+                if (user.Account_Status === 'Locked') statusClass = 'status-locked';
+
+                tr.innerHTML = `
+                    <td style="font-family: monospace; color: var(--text-secondary)">${user.User_ID}</td>
+                    <td style="font-weight: 500">${user.Username}</td>
+                    <td>${user.Email || '-'}</td>
+                    <td><span class="role-badge ${roleClass}">${user.Role}</span></td>
+                    <td><span class="status-badge ${statusClass}">${user.Account_Status}</span></td>
+                    <td style="font-size: 0.875rem">${user.Last_Login || 'Never'}</td>
+                    <td style="font-size: 0.875rem">${user.Created_Date || '-'}</td>
+                    <td>
+                        <button class="action-btn" onclick="openEditUserModal('${user.User_ID}')" title="Edit">✏️</button>
+                        <button class="action-btn" onclick="openResetPasswordModal('${user.User_ID}', '${user.Username}')" title="Reset Password">🔑</button>
+                        <button class="action-btn danger" onclick="openDeleteUserModal('${user.User_ID}', '${user.Username}')" title="Delete">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Modal Management
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            // Clear any error messages
+            const messageDiv = document.querySelector(`#${modalId} [id$="-message"]`);
+            if (messageDiv) messageDiv.innerHTML = '';
+        }
+
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        // Add User
+        function openAddUserModal() {
+            document.getElementById('add-user-modal').classList.remove('hidden');
+            // Clear form
+            document.getElementById('add-user-username').value = '';
+            document.getElementById('add-user-email').value = '';
+            document.getElementById('add-user-password').value = '';
+            document.getElementById('add-user-confirm-password').value = '';
+            document.getElementById('add-user-role').value = 'Staff';
+            document.getElementById('add-user-message').innerHTML = '';
+        }
+
+        async function submitNewUser() {
+            const username = document.getElementById('add-user-username').value.trim();
+            const email = document.getElementById('add-user-email').value.trim();
+            const password = document.getElementById('add-user-password').value;
+            const confirmPassword = document.getElementById('add-user-confirm-password').value;
+            const role = document.getElementById('add-user-role').value;
+            const messageDiv = document.getElementById('add-user-message');
+
+            // Validation
+            if (!username) {
+                messageDiv.innerHTML = '<div class="error-message">Username is required</div>';
+                return;
+            }
+
+            if (password.length < 8) {
+                messageDiv.innerHTML = '<div class="error-message">Password must be at least 8 characters</div>';
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                messageDiv.innerHTML = '<div class="error-message">Passwords do not match</div>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/users/create`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password, role })
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.detail || 'Failed to create user');
+                }
+
+                const newUser = await res.json();
+                messageDiv.innerHTML = `<div class="success-message">User ${username} created successfully!</div>`;
+
+                // Refresh users list
+                await fetchUsers();
+
+                // Close modal after 1.5 seconds
+                setTimeout(() => closeModal('add-user-modal'), 1500);
+            } catch (err) {
+                messageDiv.innerHTML = `<div class="error-message">${err.message}</div>`;
+            }
+        }
+
+        // Edit User
+        function openEditUserModal(userId) {
+            const user = users.find(u => u.User_ID === userId);
+            if (!user) return;
+
+            document.getElementById('edit-user-id').value = userId;
+            document.getElementById('edit-user-username').value = user.Username;
+            document.getElementById('edit-user-email').value = user.Email || '';
+            document.getElementById('edit-user-role').value = user.Role;
+            document.getElementById('edit-user-status').value = user.Account_Status;
+            document.getElementById('edit-user-message').innerHTML = '';
+
+            document.getElementById('edit-user-modal').classList.remove('hidden');
+        }
+
+        async function submitUserUpdate() {
+            const userId = document.getElementById('edit-user-id').value;
+            const username = document.getElementById('edit-user-username').value.trim();
+            const email = document.getElementById('edit-user-email').value.trim();
+            const role = document.getElementById('edit-user-role').value;
+            const status = document.getElementById('edit-user-status').value;
+            const messageDiv = document.getElementById('edit-user-message');
+
+            if (!username) {
+                messageDiv.innerHTML = '<div class="error-message">Username is required</div>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/users/${userId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, role, status })
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.detail || 'Failed to update user');
+                }
+
+                messageDiv.innerHTML = '<div class="success-message">User updated successfully!</div>';
+
+                // Refresh users list
+                await fetchUsers();
+
+                // Close modal after 1.5 seconds
+                setTimeout(() => closeModal('edit-user-modal'), 1500);
+            } catch (err) {
+                messageDiv.innerHTML = `<div class="error-message">${err.message}</div>`;
+            }
+        }
+
+        // Delete User
+        function openDeleteUserModal(userId, username) {
+            document.getElementById('delete-user-id').value = userId;
+            document.getElementById('delete-user-name').innerText = username;
+            document.getElementById('delete-user-message').innerHTML = '';
+            document.getElementById('delete-user-modal').classList.remove('hidden');
+        }
+
+        async function confirmDeleteUser() {
+            const userId = document.getElementById('delete-user-id').value;
+            const messageDiv = document.getElementById('delete-user-message');
+
+            try {
+                const res = await fetch(`${API_URL}/users/${userId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.detail || 'Failed to delete user');
+                }
+
+                messageDiv.innerHTML = '<div class="success-message">User deleted successfully!</div>';
+
+                // Refresh users list
+                await fetchUsers();
+
+                // Close modal after 1.5 seconds
+                setTimeout(() => closeModal('delete-user-modal'), 1500);
+            } catch (err) {
+                messageDiv.innerHTML = `<div class="error-message">${err.message}</div>`;
+            }
+        }
+
+        // Reset Password (Admin)
+        function openResetPasswordModal(userId, username) {
+            document.getElementById('reset-password-user-id').value = userId;
+            document.getElementById('reset-password-username').innerText = username;
+            document.getElementById('reset-password-new').value = '';
+            document.getElementById('reset-password-confirm').value = '';
+            document.getElementById('reset-password-message').innerHTML = '';
+            document.getElementById('reset-password-modal').classList.remove('hidden');
+        }
+
+        async function submitPasswordReset() {
+            const userId = document.getElementById('reset-password-user-id').value;
+            const newPassword = document.getElementById('reset-password-new').value;
+            const confirmPassword = document.getElementById('reset-password-confirm').value;
+            const messageDiv = document.getElementById('reset-password-message');
+
+            if (newPassword.length < 8) {
+                messageDiv.innerHTML = '<div class="error-message">Password must be at least 8 characters</div>';
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                messageDiv.innerHTML = '<div class="error-message">Passwords do not match</div>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/users/${userId}/reset-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_password: newPassword })
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.detail || 'Failed to reset password');
+                }
+
+                const result = await res.json();
+                messageDiv.innerHTML = `<div class="success-message">Password reset successfully!<br>Temporary password: <strong>${result.temporary_password}</strong><br>Please share this with the user securely.</div>`;
+
+                // Don't auto-close so admin can copy the password
+            } catch (err) {
+                messageDiv.innerHTML = `<div class="error-message">${err.message}</div>`;
+            }
+        }
+
+        // Change Own Password
+        async function submitPasswordChange() {
+            const currentPassword = document.getElementById('profile-current-password').value;
+            const newPassword = document.getElementById('profile-new-password').value;
+            const confirmPassword = document.getElementById('profile-confirm-password').value;
+            const messageDiv = document.getElementById('profile-message');
+
+            if (!currentPassword) {
+                messageDiv.innerHTML = '<div class="error-message">Current password is required</div>';
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                messageDiv.innerHTML = '<div class="error-message">New password must be at least 8 characters</div>';
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                messageDiv.innerHTML = '<div class="error-message">New passwords do not match</div>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/users/change-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.detail || 'Failed to change password');
+                }
+
+                messageDiv.innerHTML = '<div class="success-message">Password changed successfully! You will be logged out in 3 seconds...</div>';
+
+                // Log out after 3 seconds (browser will prompt for re-authentication)
+                setTimeout(() => {
+                    alert('Password changed. Please log in again with your new password.');
+                    window.location.reload();
+                }, 3000);
+            } catch (err) {
+                messageDiv.innerHTML = `<div class="error-message">${err.message}</div>`;
+            }
+        }
+
     </script>
 </body>
 
