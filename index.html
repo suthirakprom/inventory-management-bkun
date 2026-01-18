@@ -438,12 +438,36 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .user-header h1 {
+            margin-bottom: 0;
+        }
+
+        /* Responsive Table Container */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            /* consistency */
+            border-radius: 0.5rem;
+        }
+
+        /* Prevent table cells from wrapping to ensure horizontal scroll */
+        .table-container th,
+        .table-container td {
+            white-space: nowrap;
         }
 
         .search-bar {
             display: flex;
             gap: 1rem;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
         }
 
         /* Dashboard Header */
